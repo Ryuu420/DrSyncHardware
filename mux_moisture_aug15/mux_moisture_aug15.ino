@@ -1,11 +1,17 @@
 #include <ESP8266WiFi.h>
 #include <Firebase_ESP_Client.h>
 
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
+
 #define WIFI_SSID "Ted Clubber Lang_EXT"
 #define WIFI_PASSWORD "checkmosataas..."
 
 #define API_KEY "AIzaSyAnXyqW_5NJpYZ1yFNNP8G951PKB44B7To" // From Firebase Console > Project Settings > General > Web API Key
 #define DATABASE_URL "https://drysync-81845-default-rtdb.asia-southeast1.firebasedatabase.app/" // RTDB URL
+
+#define DHTTYPE DHT22
 
 // Firebase objects
 FirebaseData fbdo;
@@ -18,12 +24,13 @@ int S2 = D9;
 int S3 = D3;
 int sensorPin = A0;
 
-int Z0 = D2;
+int Z0 = D2; //connect mo yung brown, ginagamit ko para sa DHT yon
 int Z1 = D4;
 int Z2 = D6;
 int Z3 = D7;
 int zensorPin = D10;
 
+//DHT_Unified dht(zensorPin, DHTTYPE);
 void setup() {
   Serial.begin(9600);
 
@@ -62,9 +69,60 @@ void setup() {
   pinMode(Z3, OUTPUT);
 
   pinMode(zensorPin, OUTPUT);
+  
+  //dht.begin();
 }
 
 void loop() {
+
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('\n'); // read input until Enter
+    command.trim(); // remove spaces/newline
+
+    if (command == "lightLED") {
+      lightLED();
+    } else if (command == "readAndSendData") {
+      readAndSendData();
+    } else if (command == "getTemp"){
+      //getTemp();
+    } else {
+      Serial.print("Unknown command: ");
+      Serial.println(command);
+    }
+  }
+
+  delay(1000);
+}
+
+void selectMUXChannel(byte channel){
+  digitalWrite(S0, bitRead(channel, 0));
+  digitalWrite(S1, bitRead(channel, 1));
+  digitalWrite(S2, bitRead(channel, 2));
+  digitalWrite(S3, bitRead(channel, 3));
+}
+
+void zelectMUXChannel(byte channel){
+  digitalWrite(Z0, bitRead(channel, 0));
+  digitalWrite(Z1, bitRead(channel, 1));
+  digitalWrite(Z2, bitRead(channel, 2));
+  digitalWrite(Z3, bitRead(channel, 3));
+}
+
+int readSensor(byte channel) {
+  selectMUXChannel(channel);
+  delay(100);
+
+  analogRead(sensorPin); // flush
+
+  long sum = 0;
+  for (int i = 0; i < 5; i++) {
+    sum += analogRead(sensorPin);
+    delay(5);
+  }
+  return sum / 5;
+}
+
+void readAndSendData(){
   int mVal0 = readSensor(0);
   Serial.print("Moisture 1: ");
   Serial.println(mVal0);
@@ -109,8 +167,10 @@ void loop() {
   } else {
     Serial.println(fbdo.errorReason());
   }
+}
 
-  for (int i = 0; i < 16; i++) {
+void lightLED(){
+    for (int i = 0; i < 16; i++) {
     Serial.print("LED: ");
     Serial.println(i);
     zelectMUXChannel(i);
@@ -119,35 +179,7 @@ void loop() {
     digitalWrite(zensorPin, LOW);
     delay(200);
   }
-
-  delay(1000);
 }
 
-void selectMUXChannel(byte channel){
-  digitalWrite(S0, bitRead(channel, 0));
-  digitalWrite(S1, bitRead(channel, 1));
-  digitalWrite(S2, bitRead(channel, 2));
-  digitalWrite(S3, bitRead(channel, 3));
-}
 
-void zelectMUXChannel(byte channel){
-  digitalWrite(Z0, bitRead(channel, 0));
-  digitalWrite(Z1, bitRead(channel, 1));
-  digitalWrite(Z2, bitRead(channel, 2));
-  digitalWrite(Z3, bitRead(channel, 3));
-}
-
-int readSensor(byte channel) {
-  selectMUXChannel(channel);
-  delay(100);
-
-  analogRead(sensorPin); // flush
-
-  long sum = 0;
-  for (int i = 0; i < 5; i++) {
-    sum += analogRead(sensorPin);
-    delay(5);
-  }
-  return sum / 5;
-}
 
