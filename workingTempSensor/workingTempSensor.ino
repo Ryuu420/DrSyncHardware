@@ -1,28 +1,32 @@
-#include <DHT.h>
+#include <Wire.h>
+#include <PCF8575.h>
 
-#define DHTPIN D4      // TEST PIN, PLEASE RETURN TO Z1 AFTER TEST
-#define DHTTYPE DHT22
-
-DHT dht(DHTPIN, DHTTYPE);
+// PCF8575 at address 0x20 (from your I2C scanner)
+PCF8575 pcf(0x20);
 
 void setup() {
-  Serial.begin(9600);
-  Serial.println("DHT22 test!");
-  dht.begin();
+  Serial.begin(115200);
+  Serial.println("PCF8575 minimal test...");
+
+  // Try to initialize
+  if (!pcf.begin()) {
+    Serial.println("⚠️ PCF8575 not found at 0x20!");
+    while (1); // Stop here if chip not found
+  }
+
+  Serial.println("✅ PCF8575 initialized at 0x20");
+
+  // Set P0 as output
+  pcf.pinMode(P0, OUTPUT);
+  pcf.digitalWrite(P0, LOW); // Start OFF
 }
 
 void loop() {
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
+  Serial.println("P0 -> HIGH");
+  pcf.digitalWrite(P0, HIGH);
+  delay(1000);
 
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
-  } else {
-    Serial.print("Temp: ");
-    Serial.print(t);
-    Serial.print(" °C  Humidity: ");
-    Serial.print(h);
-    Serial.println(" %");
-  }
-  delay(2000);
+  Serial.println("P0 -> LOW");
+  pcf.digitalWrite(P0, LOW);
+  delay(1000);
 }
