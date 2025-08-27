@@ -115,7 +115,7 @@ void loop() {
 
   for (int i = 0; i <= 4; i++){
     getDistance(i);
-    if (distanceCm <= 20 && distanceCm >= 12) {
+    if (distanceCm <= 25 && distanceCm >= 12) {
       // Send to Firebase — use 'result'!
       String path = "/Sensors/" + String(i) + "/Status"; // e.g., /Sensors/0/Value
       if (Firebase.RTDB.setString(&fbdo, path.c_str(), "Active")) {
